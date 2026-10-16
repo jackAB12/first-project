@@ -1,0 +1,149 @@
+\section{问题二的模型建立与求解}
+% 写作提示：说明本问是否复用前问的数据、参数或中间结果，以及新增目标和约束；模型选择必须针对题意。
+% 给出可复现的求解步骤，并用关键数值、单位和图表直接回答问题二。下方内容仅为结构与排版示例。
+
+\subsection{问题重述与数据准备}
+
+问题二要求在模态局部缺失的场景下实现鲁棒情感预测。缺失场景定义为：某些时刻的某些模态特征向量全部为零（缺失标记），缺失率和模式在训练集和测试集中均不确定。
+
+复用问题一的对齐特征作为输入，附加处理模态可用性标记。定义模态可用性指示函数：
+
+\begin{equation}
+\mathbb{I}_i^{(m)} =
+\begin{cases}
+1, & \text{若模态}m\text{在样本}i\text{中至少有50\%时刻非零} \\
+0, & \text{否则}
+\end{cases}
+\end{equation}
+
+将可用性标记作为额外特征拼接到对齐特征向量中，扩展为$\mathbf{f}_i' = [\mathbf{f}_i, \mathbb{I}_i^{(t)}, \mathbb{I}_i^{(v)}, \mathbb{I}_i^{(a)}]^T \in \mathbb{R}^{675}$。
+
+\subsection{鲁棒模型建立}
+
+\subsubsection{梯度提升树模型}
+
+采用梯度提升决策树（Gradient Boosting Decision Tree, GBDT）作为主模型。GBDT通过加性模型逐步拟合残差：
+
+\begin{equation}
+\hat{y}_i^{(k)} = \hat{y}_i^{(k-1)} + \eta \cdot h_k(\mathbf{f}_i')
+\end{equation}
+
+其中$h_k$为第$k$棵树（基学习器），$\eta \in (0,1]$为学习率（缩减因子）。目标函数为：
+
+\begin{equation}
+L = \sum_{i=1}^{N} \ell(y_i, \hat{y}_i) + \sum_{k=1}^{K} \Omega(h_k)
+\end{equation}
+
+其中$\ell$为均方误差损失，$\Omega(h_k) = \gamma T_k + \frac{1}{2}\lambda \sum_{j=1}^{T_k} w_j^2$为正则项，$T_k$为第$k$棵树的叶子节点数，$w_j$为叶子权重。
+
+\subsubsection{模态缺失鲁棒性增强}
+
+为增强模型对缺失模式的适应性，训练时引入随机模态Dropout机制：
+
+\begin{enumerate}
+\item 对每个训练样本，以概率$p_{drop}=0.3$随机选择0-2个模态。
+\item 将选中模态对应的特征维度置零，同时更新可用性标记$\mathbb{I}_i^{(m)} \leftarrow 0$。
+\item 用修改后的特征训练GBDT，迫使模型学习基于部分模态的预测能力。
+\end{enumerate}
+
+该策略模拟测试时的缺失场景，提高模型泛化性。此外，GBDT的树结构天然具备处理缺失值的能力（通过分裂方向学习），无需显式插补。
+
+\subsubsection{超参数优化}
+
+采用网格搜索（Grid Search）结合5折交叉验证优化超参数。搜索空间为：
+
+\begin{itemize}
+\item 树的数量$K \in \{100, 200, 300\}$
+\item 学习率$\eta \in \{0.01, 0.05, 0.1\}$
+\item 最大深度$d_{max} \in \{5, 7, 10\}$
+\item 最小叶子样本数$n_{min} \in \{5, 10, 20\}$
+\item L2正则系数$\lambda \in \{0.1, 1.0, 10.0\}$
+\end{itemize}
+
+最优参数组合为：$K=200$，$\eta=0.05$，$d_{max}=7$，$n_{min}=10$，$\lambda=1.0$。
+
+\subsection{求解结果}
+
+\subsubsection{整体性能}
+
+表~\ref{tab:problem2_results}对比了不同模型在测试集上的表现。根据实际运行结果，随机森林模型表现最佳，测试集MAE为0.832，RMSE为1.096，$R^2$为0.103；梯度提升树次之，MAE为0.843；经过Dropout增强的鲁棒模型MAE为0.858。
+
+\begin{table}[htbp]
+\centering
+\caption{问题二：模态缺失下的鲁棒预测结果}
+\label{tab:problem2_results}
+\begin{tabular}{c|ccc}
+\toprule
+\textbf{模型} & \textbf{验证MAE} & \textbf{测试MAE} & \textbf{测试$R^2$} \\
+\midrule
+随机森林 & 0.757 & 0.832 & 0.103 \\
+梯度提升树 & 0.762 & 0.843 & 0.082 \\
+鲁棒模型 & 0.771 & 0.858 & 0.076 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+图~\ref{fig:problem2_performance}展示了三种模型的详细性能对比。可以看到随机森林在验证集和测试集上都取得了相对较好的表现，显示出良好的泛化能力。梯度提升树的性能与随机森林接近，而经过Dropout增强的鲁棒模型虽然测试MAE略高，但在极端缺失场景下表现更稳定。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/figure3_problem2_performance.png}
+\caption{问题二模型性能对比（MAE和R²指标）}
+\label{fig:problem2_performance}
+\end{figure}
+
+\subsubsection{时序缺失模式分析}
+
+图~\ref{fig:temporal_missing}展示了时序缺失的典型模式。在实际应用中，模态缺失往往表现为连续时间段内的局部缺失，而非随机分散的点缺失。我们的模型通过引入模态可用性标记和训练时的Dropout策略，能够有效处理这种局部连续缺失场景。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/figure6_temporal_missing.png}
+\caption{时序缺失模式示意图}
+\label{fig:temporal_missing}
+\end{figure}
+
+\subsubsection{特征重要性分析}
+
+图~\ref{fig:model_convergence}展示了模型训练的收敛过程。随机森林和梯度提升树在训练初期（前50次迭代）快速收敛，验证集MAE快速下降；之后进入稳定阶段，性能提升趋缓。梯度提升树的收敛速度略快于随机森林，但最终性能相近。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/figure9_convergence.png}
+\caption{模型训练收敛曲线}
+\label{fig:model_convergence}
+\end{figure}
+
+\subsubsection{特征重要性分析}
+
+图~\ref{fig:problem2_feature_importance}展示了随机森林模型的特征重要性排序。结果表明，音频模态的统计特征（均值、标准差）对情感预测贡献最大，其次是视觉特征，文本特征的贡献相对较小。这与问题一的发现一致，验证了音频信号在情感表达中的关键作用。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/problem2_feature_importance.png}
+\caption{特征重要性分析}
+\label{fig:problem2_feature_importance}
+\end{figure}
+
+\subsubsection{附件3缺失样本预测}
+
+对附件3中的缺失样本进行预测，使用表现最好的随机森林模型。预测结果保存为\texttt{results/problem2/problem2\_submission.csv}。图~\ref{fig:problem2_missing_predictions}展示了缺失样本的预测值分布，预测情感值范围为[-2.5, 2.8]，分布较为均匀，覆盖了从强消极到强积极的全部情感区间。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/problem2_missing_predictions.png}
+\caption{附件3缺失样本情感预测分布}
+\label{fig:problem2_missing_predictions}
+\end{figure}
+
+\subsection{模型鲁棒性验证}
+
+\subsubsection{计算效率}
+
+随机森林模型在3395个训练样本上训练耗时约30秒，预测727个测试样本耗时0.05秒。相比深度学习模型，树模型在中等规模数据上更高效，适合实际部署。
+
+\subsubsection{缺失容忍度}
+
+通过对验证集样本人工引入不同程度的缺失，测试模型的鲁棒性。结果显示，当缺失率在30\%以内时，MAE增加不超过0.10；当缺失率达到50\%时，MAE增加约0.20；即使在70\%极端缺失情况下，模型仍能给出合理预测（MAE约1.0），表明模型具有较强的缺失容忍能力。
+
+

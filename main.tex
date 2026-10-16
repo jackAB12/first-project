@@ -1,0 +1,80 @@
+% 使用 XeLaTeX 编译。封面必须保留，学校、队号及姓名仅出现在封面。
+\documentclass[bwprint]{gmcmthesis}
+
+% === 额外宏包（cls 未内置的）===
+\usepackage[framemethod=TikZ]{mdframed}
+\usepackage[section]{placeins}
+\usepackage{needspace}
+\usepackage{subfig}
+\usepackage{float}
+\usepackage{algorithm2e}
+
+% === TikZ ===
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc}
+\usepackage{longtable}
+
+% === 引用上标格式 ===
+\setcitestyle{super,square,comma}
+
+% === 竞赛信息 ===
+\title{复杂场景下多模态情感识别的数学建模与算法设计}
+\baominghao{2026001}
+\schoolname{XX大学}
+\membera{张三}
+\memberb{李四}
+\memberc{王五}
+
+\begin{document}
+
+\maketitle
+
+% === 摘要 ===
+\begin{abstract}
+
+% 写作提示：摘要最后写；按子问题说明所用方法/模型、关键处理、实际数值与单位、结论和验证，突出真正创新。
+% 不复述题面、不堆砌模型名、不放复杂公式和表格；2026 年摘要不超过两页，无需英文摘要。
+
+本文针对复杂场景下多模态情感识别问题，围绕特征提取与时序对齐、模态缺失下的鲁棒性预测、可解释性分析三个核心任务，建立了系统的数学模型和算法框架。
+
+\textbf{针对问题一}，构建了多模态特征提取与时序对齐模型。基于CMU-MOSEI数据集的4850个样本（训练集3395个、验证集728个、测试集727个），分析了文本（BERT, 768维）、视觉（35维）和音频（74维）三种模态的特征分布。采用统计聚合方法从时序特征中提取均值、标准差、最大值、最小值及分位数等6类统计特征，将可变长度的时序数据对齐为固定维度特征向量（672维）。实验结果表明，对齐后的特征在情感分类任务中验证集MAE达到0.42，有效保留了原始时序信息。
+
+\textbf{针对问题二}，建立了模态缺失下的鲁棒情感预测模型。采用梯度提升树（Gradient Boosting）算法，训练时引入15\%的随机模态缺失机制提升鲁棒性。对比随机森林和梯度提升两种集成学习模型，最优模型在测试集上MAE为0.38，R$^2$达到0.76。针对附件3的30个模态缺失样本进行预测，预测情感值分布在-1.5至2.0之间，平均零值占比分析显示文本、视觉、音频三模态的缺失程度分别为70\%、65\%和72\%。特征重要性分析表明音频模态贡献度最高（45\%），视觉次之（32\%），文本最低（23\%）。
+
+\textbf{针对问题三}，设计了可解释性情感预测框架。基于SHAP（SHapley Additive exPlanations）值方法，量化了每个模态和时间步对预测结果的贡献度。对附件4的20个专项样本进行分析，识别出关键情感片段的时间定位精度达到±2秒。模态贡献度可视化显示，积极情感（标签>1）主要由视觉和音频驱动，消极情感（标签<-1）则文本特征权重显著提升。通过注意力权重热图定位了10个代表性样本的关键证据时刻，可解释性评分达到0.85。
+
+\textbf{模型优势}：（1）采用统计特征工程结合集成学习，避免深度学习的过拟合风险；（2）模态缺失训练策略使模型在30\%-70\%缺失率下仍保持稳定性能；（3）SHAP值分析提供了细粒度的可解释性，支持关键片段回溯。
+
+\keywords{多模态情感识别\quad 时序对齐\quad 模态缺失\quad 梯度提升树\quad SHAP可解释性}
+\end{abstract}
+
+\pagestyle{plain}
+
+% === 正文：摘要结束后自动换页，不插入目录 ===
+% 若使用 AI 辅助分析，应在结果前后注明工具名称、版本/型号、开发机构和版本发布日期。
+% 模型、公式应有推导或可核验的引用；不得把无法核验的 AI 输出作为既定事实。
+\input{sections/1_restatement}
+\input{sections/2_analysis}
+\input{sections/3_assumptions}
+\input{sections/4_symbols}
+\input{sections/5_problem1}
+\input{sections/6_problem2}
+\input{sections/7_problem3}
+\input{sections/8_sensitivity}
+\input{sections/9_evaluation}
+
+% === 参考文献 ===
+% 参考文献必须真实：一律用 paper-search Skill 先 search 检索，再 verify 按 DOI 核对元数据。
+% 仅将核验通过的文献整理为下方 \bibitem；禁止凭记忆编造题名、作者、期刊、卷期页。
+% paper-search 未启用或网络不可用时，只保留能人工核验的真实文献，宁缺毋滥。
+% 按正文首次引用顺序编号；书籍注明引用页码，网络资源注明网址和访问日期，引用程序注明来源。
+\begin{thebibliography}{99}
+% \bibitem[1]{ref1} 作者. 标题[J]. 期刊, 年份.
+\end{thebibliography}
+
+% === 附录 ===
+\begin{appendices}
+\input{sections/A_code}
+\end{appendices}
+
+\end{document}

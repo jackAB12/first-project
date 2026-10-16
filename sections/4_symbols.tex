@@ -1,0 +1,29 @@
+\section{符号说明}
+
+% 写作提示：只列正文实际使用且反复出现的符号,给出含义、单位、取值范围或下标定义；
+% 符号首次出现在正文或公式中时仍需就地解释，并保持全文一致。下表内容仅为排版示例。
+
+\begin{table}[htbp]
+\centering
+\caption{主要符号说明}
+\begin{tabular}{c|l|c}
+\toprule
+\textbf{符号} & \textbf{含义} & \textbf{单位/范围} \\
+\midrule
+$N$ & 样本总数 & 个 \\
+$N_{train}, N_{valid}, N_{test}$ & 训练集、验证集、测试集样本数 & 个 \\
+$T_i$ & 第$i$个样本的时序长度 & 帧 \\
+$\mathbf{X}^{(t)}, \mathbf{X}^{(v)}, \mathbf{X}^{(a)}$ & 文本、视觉、音频特征矩阵 & --- \\
+$d_t, d_v, d_a$ & 文本、视觉、音频特征维度 & 维 \\
+$\mathbf{f}_i \in \mathbb{R}^D$ & 第$i$个样本对齐后的特征向量 & --- \\
+$y_i \in [-3, 3]$ & 第$i$个样本的情感标签 & --- \\
+$\hat{y}_i$ & 第$i$个样本的预测情感值 & --- \\
+$\text{MAE}$ & 平均绝对误差 & --- \\
+$\text{RMSE}$ & 均方根误差 & --- \\
+$R^2$ & 决定系数 & $[0, 1]$ \\
+$\phi_j(v)$ & 第$j$个特征的SHAP值 & --- \\
+$\mathbb{I}(\cdot)$ & 指示函数，模态可用时为1，缺失时为0 & $\{0,1\}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+

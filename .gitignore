@@ -1,0 +1,52 @@
+# Local Python environments and caches
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Local agent/editor state
+.claude/
+.vscode/
+.idea/
+.git-local/
+.env
+.env.*
+
+# Original datasets, videos, audio, and generated binary features
+E题数据/
+data/
+**/*.mp4
+**/*.avi
+**/*.mov
+**/*.wav
+**/*.pkl
+**/*.pickle
+**/*.npy
+**/*.npz
+**/*.h5
+**/*.onnx
+**/*.ot
+**/*.bin
+**/*.safetensors
+**/*.msgpack
+**/*.pth
+**/*.pt
+**/temp_audio/
+
+# Downloaded model caches
+code/models/
+models/
+
+# LaTeX auxiliary and local build files
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+texput.log
